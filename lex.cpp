@@ -2,28 +2,99 @@
 
 #include "lex.h"
 #include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
 
+
+//---------------------------------------------------------
+//Lex methods definition
+//---------------------------------------------------------
+
+Lex::Lex(TypeLex atype, const char * str, int line_num):type(atype), line(line_num)
+{
+	text_repres = new char[strlen(str)+1];
+	strcpy(text_repres, str);
+}
+
+Lex::~Lex()
+{
+	delete [] text_repres;
+}
+
+Lex::Lex(const Lex & cp_lex)
+{
+	line=cp_lex.line;
+	type=cp_lex.type;
+	text_repres = new char[strlen(cp_lex.text_repres)+1];
+	strcpy(text_repres, cp_lex.text_repres);
+}
+
+void Lex::Print()
+{
+	printf(text_repres);
+}
+
+TypeLex Lex::GetType()
+{
+	return type;
+}
+
+const char * Lex::GetText()
+{
+	return text_repres;
+}
+
+//---------------------------------------------------------
+
+
+
+//---------------------------------------------------------
+//Scanner methods definition
+//---------------------------------------------------------
 
 Scanner::Scanner()
 {
 	state = start;
 }
 
-Lex * Step(const char c)
+
+Lex Scanner::Step(const char c)
 {
+	Lex * lexem = NULL;
 	switch (state) {
 		case start:
 			if (isdigit(c))
 				state = number;
-			if (c == '?' || c == '@' || c == '$')
+			else if (c == '?' || c == '@' || c == '$') {
 				state = identificator;
-			if (isalpha(c))
+				switch (c) {
+					case '?': 
+						lex_type = Lex::types::function;
+						break;
+					case '@':
+						lex_type = Lex::types::label;
+					case '$':
+						lex_type = Lex::types::variable;
+				}
+			}
+			else if (isalpha(c))
 				state = keyword;
-			if (c == ':')
+			else if (c == ':')
 				state = assignment;
-			if (c == '\"')
+			else if (c == '\"')
 				state = string;
-			if (c == '+' || c == '-' || c == ) //TODO
+			else if (c == '+' || c == '-' || c == '%' || c == '*' || c == '/' || c == ':' || c == ';' || c == '&' || c == '|' || c == '{' || c == '}' || c == ';' || c == '(' || c== ')' || c == '>' || c == '<' || c == '=' || c == '[' || c == ']') 
+				state = separator;
+			else state = error;
+
+			if(state != error) {
+				buff.AddChar(c);
+			}
+			if(state == separator) {
+				lexem = new Lex(Lex::types::separator, buff.GetBuff());
+				buff.Clear();
+				state = start;
+			}
 			break;
 		case number:
 			break;
@@ -38,4 +109,7 @@ Lex * Step(const char c)
 		case separator:
 			break;
 	}
+	return lexem;
 }
+
+//------------------------------------------------------
