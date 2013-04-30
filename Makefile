@@ -1,3 +1,3 @@
 default:
-	g++ -Wall -g lex.cpp buffer.cpp -o bin/buff_test
+	g++ -Wall -g lex.cpp parser.cpp poliz.cpp buffer.cpp main.cpp -o bin/bot
 

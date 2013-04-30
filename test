@@ -1,0 +1,15 @@
+while 1 do {
+	buy 2, ?raw_price;
+	sell ?production(?my_id), ?production_price;
+	$toprod = 2;
+@lab:
+	{
+		if ?raw(?my_id) < $toprod then
+			$toprod = ?raw(?myid);
+		prod $toprod;
+		endturn;
+		print "this is test string", $topprod>1;
+		goto @lab;
+	}
+}
+

@@ -56,7 +56,7 @@ Buffer::Buffer(const Buffer & cbuff)
 	size = cbuff.size;
 	char * temp = buff;
 	char * temp2 = cbuff.buff;
-	while (*temp++ = *temp2++);
+	while ((*temp++ = *temp2++)!='\0');
 }
 
 Buffer::~Buffer()
