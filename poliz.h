@@ -229,8 +229,10 @@ class PolizIdTable
 {
 	struct ltabl_item 
 	{
-		//TODO
-	}
+		const char * inf;
+		PolizStack::PolizItem * point;
+		ltabl_item * next;
+	} * ltabl, * ifltabl;
 	char * iflabel_count;     //ATTENTION:though it's pointer, it's used like integer
 	PolizElem * CreateRealLabel(const char * ltext, Lex::Type lex_type);
 	PolizElem * CreateVar(const char * ltext);

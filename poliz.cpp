@@ -128,9 +128,29 @@ PolizElem * PolizIdTable::CreateElem(Lex lex)
 	return ret_val;
 }
 
-PolizStack::PolizItem * & PolizIdTable::FindLabel(const char *, Lex::Type lex_type)
+PolizStack::PolizItem * & PolizIdTable::FindLabel(const char * lex_inf, Lex::Type lex_type)
 {
-	
+	ltabl_item * label;
+	if(lex_type == Lex::lex_label) {
+		label = ltabl;
+	} else {
+		label = ifltabl;
+	}
+	while(label!=NULL) {
+		if(lex_type == Lex::lex_label) {
+			if(!strcmp(lex_inf, label->inf))
+				return label->point;
+		} else {
+			if(lex_inf==label->inf)
+				return label->point;
+		}
+	}
+	if(lex_type == Lex::lex_label) {
+		label = ltabl;
+	} else {
+		label = ifltabl;
+	}
+//TODO:finish FindLabel, осталось только добавить новый элемент в таблицу
 }
 
 PolizElem * PolizIdTable::CreateRealLable(const char * ltext, Lex::Type lex_type)
