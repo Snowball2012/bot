@@ -1,8 +1,28 @@
 $i = 0;
 $s = 0;
-while $i<100 do {
+while $i<100 * do {
 	$s = $i + $s;
 	$i = $i + 1;
 	if($s>100) then
 		print $s, " ", $i;
 }
+
+print "array test";
+
+$i = 25;
+
+while $i=>0 do {
+	$arr[$i] = $i+10;
+	print $arr[$i];
+	$i = $i - 1;
+}
+
+$s = 0;
+$i = 0;
+
+print "sum of the array:";
+while $i =<25 do {
+	$s = $s + $arr[$i];
+	$i = $i + 1 + 1;
+}
+print $s;

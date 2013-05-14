@@ -1,0 +1,18 @@
+S -> Prog
+Prog -> Oper Prog | lex_null
+Oper -> '{' OpSet '}' | 'if' ExpCmp 'then' Oper |
+		'while' ExpCmp 'do' Oper | lex_label ':' Oper() |
+		'endturn' ';' | 'prod' ExpCmp ';' |
+		'build' ExpCmp ';' | 'buy' ExpCmp ',' ExpCmp ';'
+		| 'sell' ExpCmp ',' ExpCmp ';' | Var() '=' ExpCmp ';' |
+		'print' PrintList ';' | 'goto' lex_label ';' | ';'
+OpSet -> NULL | Oper OpSet
+Var -> lex_var | lex_var '[' ExpCmp ']' 
+ExpCmp -> ExpAdd | ExpAdd '=, <, >, =>, =<' ExpAdd
+ExpAdd -> ExpMul | ExpMul '+, -, |' ExpAdd
+ExpMul -> Opnd | Opnd ' *, / & ' ExpMul
+Opnd -> lex_num | '-' Opnd | '(' ExpCmp | ')' | Var | lex_func Func
+Func -> NULL | '(' Args ')' 
+Args -> ExpCmp | ExpCmp ',' Args
+PrintList -> PrintElem | PrintElem ',' PrintList
+PrintElem -> lex_str | ExpCmp

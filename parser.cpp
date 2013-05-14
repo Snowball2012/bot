@@ -74,7 +74,8 @@ void Parser::Oper()
 			CheckLex(Lex::lex_rfbrace, "_}_ expected");
 			GetLex();
 			break;
-		case Lex::lex_if : {
+		case Lex::lex_if : 
+			{
 				GetLex();
 				ExpCmp();
 				Label *	else_label = new Label();
@@ -86,7 +87,8 @@ void Parser::Oper()
 				prog.PutLabel(else_label);
 			}
 			break;
-		case Lex::lex_while : {
+		case Lex::lex_while : 
+			{
 				GetLex();
 				Label * while_label = new Label();
 				lab_t.Add(while_label);
@@ -252,7 +254,8 @@ void Parser::ExpAdd()
 	ExpMul();
 	EofCheck();
 	while(cur_lex->GetType() == Lex::lex_plus || cur_lex->GetType() == Lex::lex_minus
-		|| cur_lex->GetType() == Lex::lex_or) {
+		|| cur_lex->GetType() == Lex::lex_or) 
+	{
 		PolizElem * add;
 		switch(cur_lex->GetType()) {
 			case Lex::lex_plus:

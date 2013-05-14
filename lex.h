@@ -110,11 +110,16 @@ private:
 class LexError
 {
 	int line;
+	Buffer lexem;
 public:
-	LexError(int aline):line(aline) {}
+	LexError(int aline,Buffer lex):line(aline), lexem(lex) {}
 	int GetLine() const
 	{
 		return line;
+	}
+	const char * GetLex() const
+	{
+		return lexem.GetBuff();
 	}
 };
 

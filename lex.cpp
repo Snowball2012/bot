@@ -10,7 +10,8 @@
 //Lex methods definition
 //---------------------------------------------------------
 
-Lex::Lex(Type atype, const char * str, int line_num):type(atype), line(line_num)
+Lex::Lex(Type atype, const char * str, int line_num)
+	: type(atype), line(line_num)
 {
 	text_repres = new char[strlen(str)+1];
 	strcpy(text_repres, str);
@@ -206,7 +207,7 @@ void Scanner::Start(const char c)
 	} else if(c == '\n')
 		line++;
 	else if(!(c == ' ' || c == '\t' || c == '\r'))
-		throw LexError(line);
+		throw LexError(line, buff);
 }
 
 void Scanner::Number(const char c)
@@ -216,7 +217,7 @@ void Scanner::Number(const char c)
 	} else {
 		if (!(c == '\n' || c == '\t' || c == '\r' || c == ' ' 
 			|| c == '=' || InSeps(c))) {
-			throw LexError(line);
+			throw LexError(line, buff);
 		}
 		Lex * lexem = new Lex(Lex::lex_num, buff.GetBuff(), line);
 		AddLexem(lexem);
@@ -232,10 +233,10 @@ void Scanner::Ident(const char c)
 	} else {
 		const char * lex_text = buff.GetBuff();
 		if (lex_text[1]=='\0')
-			throw LexError(line);
+			throw LexError(line, buff);
 		if (!(c == '\n' || c == '\t' || c == '\r' || c == ' ' 
 			|| c == '=' || InSeps(c))) {
-			throw LexError(line);
+			throw LexError(line, buff);
 		}
 		Lex::Type type;
 		switch (lex_text[0]) {
@@ -263,12 +264,12 @@ void Scanner::Keyword(const char c)
 	} else {
 		if(!(c == '\n' || c == '\t' || c == '\r' || c == ' ' 
 			|| c == '=' || InSeps(c))) {
-			throw LexError(line);
+			throw LexError(line, buff);
 		}
 		Lex::Type type;
 		type = FindKeywordType(buff.GetBuff());
 		if (type == Lex::lex_null)
-			throw LexError(line);
+			throw LexError(line, buff);
 		Lex * new_lex = new Lex(type, buff.GetBuff(), line);
 		AddLexem(new_lex);
 		state = start;
