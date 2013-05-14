@@ -59,10 +59,12 @@ public:
 	const char * GetText() const;
 	int GetLine() const { return line; }
 	const Lex & operator= (const Lex & lexop);
+	int GetPos() const;
 private:
 	Type type;
 	char * text_repres;
 	int line;
+	int pos;
 };
 
 struct LexList 

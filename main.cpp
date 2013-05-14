@@ -6,7 +6,7 @@ int main(int argc, char ** argv)
 {
 	try{
 		Parser prs;
-		prs.Analyse();
+		prs.Interpret();
 		printf("done\n");
 	}
 	catch(SyntErr error) {

@@ -1,0 +1,8 @@
+$i = 0;
+$s = 0;
+while $i<100 do {
+	$s = $i + $s;
+	$i = $i + 1;
+	if($s>100) then
+		print $s, " ", $i;
+}

@@ -3,15 +3,17 @@
 
 #include "lex.h"
 #include "poliz.h"
+#include "id_tables.h"
 
 class Parser
 {
 	bool file_ended;
 	Scanner lex_scan;
+	IdTable<Variable> var_t;
+	IdTable<Label> lab_t;
 	Lex * cur_lex;
 	PolizStack prog;
 	PolizStack stack;
-	PolizIdTable ident_t;
 	void GetLex();
 	void Prog();
 	void Oper();
@@ -25,10 +27,12 @@ class Parser
 	void Args();
 	void PrintList();
 	void PrintElem();
+	PolizElem * CreateFunc(Lex * lex);
 	void CheckLex(Lex::Type type, const char * errmsg);
 	inline void EofCheck();
 public:
 	void Analyse();
+	void Interpret();
 	Parser();
 };
 

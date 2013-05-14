@@ -5,10 +5,10 @@ while 1 do {
 @lab:
 	{
 		if ?raw(?my_id) < $toprod then
-			$toprod = ?raw(?myid);
+			$toprod = ?raw(?my_id);
 		prod $toprod;
 		endturn;
-		print "this is test string", $topprod>1;
+		print "this is test string", $toprod>1;
 		goto @lab;
 	}
 }
