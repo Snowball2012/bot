@@ -8,6 +8,7 @@
 #include <string.h>
 #include "lex.h"
 #include "id_tables.h"
+#include "client.h"
 
 class PolizElem;
 //Poliz list/stack class
@@ -116,7 +117,7 @@ public:
 class PolizElem
 {
 public:
-	virtual void Evaluate(PolizStack * stack, PolizItem ** cur_cmd) const = 0;
+	virtual void Evaluate(PolizStack * stack, PolizItem ** cur_cmd, GameClient * client) const = 0;
 	virtual ~PolizElem() {}
 };
 
@@ -124,7 +125,7 @@ class PolizConst:public PolizElem
 {
 public:
 	virtual PolizElem * Clone() const = 0;
-	void Evaluate(PolizStack * stack, PolizItem ** cur_cmd) const
+	void Evaluate(PolizStack * stack, PolizItem ** cur_cmd, GameClient * client) const
 	{
 		stack->Push(Clone());
 		*cur_cmd = (*cur_cmd)->next;
@@ -135,10 +136,10 @@ public:
 class PolizFunction:public PolizElem
 {
 public:
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const = 0;
-	void Evaluate(PolizStack * stack, PolizItem ** cur_cmd) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const = 0;
+	void Evaluate(PolizStack * stack, PolizItem ** cur_cmd, GameClient * client) const
 	{
-		PolizElem * res = EvaluateFun(stack);
+		PolizElem * res = EvaluateFun(stack, client);
 		if(res)
 			stack->Push(res);
 		*cur_cmd = (*cur_cmd)->next;
@@ -297,7 +298,7 @@ class PolizSell:public PolizFunction
 public:
 	PolizSell() {}
 	virtual ~PolizSell() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
 		PolizElem * op1 = stack->Pop();
 		PolizInt * pc = dynamic_cast<PolizInt *>(op1);
@@ -310,7 +311,7 @@ public:
 		int count, value;
 		count = pc->Get();
 		value = pv->Get();
-		printf("Sell: %i \tby: %i\n", count, value);
+		client->Sell(value, count);
 		delete pc;
 		delete pv;
 		return NULL;
@@ -322,7 +323,7 @@ class PolizBuy:public PolizFunction
 public:
 	PolizBuy() {}
 	virtual ~PolizBuy() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
 		PolizElem * op1 = stack->Pop();
 		PolizInt * pc = dynamic_cast<PolizInt *>(op1);
@@ -335,7 +336,7 @@ public:
 		int count, value;
 		count = pc->Get();
 		value = pv->Get();
-		printf("Buy: %i \tby: %i\n", count, value);
+		client->Buy(value,count);
 		delete pc;
 		delete pv;
 		return NULL;
@@ -347,7 +348,7 @@ class PolizProd:public PolizFunction
 public:
 	PolizProd() {}
 	virtual ~PolizProd() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
 		PolizElem * op1 = stack->Pop();
 		PolizInt * pc = dynamic_cast<PolizInt *>(op1);
@@ -355,7 +356,7 @@ public:
 			throw PolizNotInt(op1);
 		int count;
 		count = pc->Get();
-		printf("Prod: %i \n", count);
+		client->Prod(count);
 		delete pc;
 		return NULL;
 	}
@@ -366,7 +367,7 @@ class PolizBuild:public PolizFunction
 public:
 	PolizBuild() {}
 	virtual ~PolizBuild() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
 		PolizElem * op1 = stack->Pop();
 		PolizInt * pc = dynamic_cast<PolizInt *>(op1);
@@ -374,7 +375,7 @@ public:
 			throw PolizNotInt(op1);
 		int count;
 		count = pc->Get();
-		printf("Build: %i \n", count);
+		client->Build(count);
 		delete pc;
 		return NULL;
 	}
@@ -384,7 +385,7 @@ class PolizUpgrade:public PolizFunction
 {
 	PolizUpgrade() {}
 	virtual ~PolizUpgrade() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
 		printf("Upgraded\n");
 		return NULL;
@@ -396,7 +397,7 @@ class PolizEndturn:public PolizFunction
 public:
 	PolizEndturn() {}
 	virtual ~PolizEndturn() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
 		printf("Turn ended\n");
 		return NULL;
@@ -408,7 +409,7 @@ class PolizFunPlus:public PolizFunction
 public:
 	PolizFunPlus() {}
 	virtual ~PolizFunPlus() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
 		PolizElem * op1 = stack->Pop();
 		PolizInt * p1 = dynamic_cast<PolizInt *>(op1);
@@ -432,7 +433,7 @@ class PolizFunMinus:public PolizFunction
 public:
 	PolizFunMinus() {}
 	virtual ~PolizFunMinus() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
 		PolizElem * op1 = stack->Pop();
 		PolizInt * p1 = dynamic_cast<PolizInt *>(op1);
@@ -457,7 +458,7 @@ class PolizFunMinusAlone:public PolizFunction
 public:
 	PolizFunMinusAlone() {}
 	virtual ~PolizFunMinusAlone() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
 		PolizElem * op1 = stack->Pop();
 		PolizInt * p1 = dynamic_cast<PolizInt *>(op1);
@@ -475,7 +476,7 @@ class PolizFunMul:public PolizFunction
 public:
 	PolizFunMul() {}
 	virtual ~PolizFunMul() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
 		PolizElem * op1 = stack->Pop();
 		PolizInt * p1 = dynamic_cast<PolizInt *>(op1);
@@ -499,7 +500,7 @@ class PolizFunDiv:public PolizFunction
 public:
 	PolizFunDiv() {}
 	virtual ~PolizFunDiv() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
 		PolizElem * op1 = stack->Pop();
 		PolizInt * p1 = dynamic_cast<PolizInt *>(op1);
@@ -523,7 +524,7 @@ class PolizFunOr:public PolizFunction
 public:
 	PolizFunOr() {}
 	virtual ~PolizFunOr() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
 		PolizElem * op1 = stack->Pop();
 		PolizInt * p1 = dynamic_cast<PolizInt *>(op1);
@@ -547,7 +548,7 @@ class PolizFunAnd:public PolizFunction
 public:
 	PolizFunAnd() {}
 	virtual ~PolizFunAnd() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
 		PolizElem * op1 = stack->Pop();
 		PolizInt * p1 = dynamic_cast<PolizInt *>(op1);
@@ -571,7 +572,7 @@ class PolizFunEq: public PolizFunction
 public:
 	PolizFunEq() {}
 	virtual ~PolizFunEq() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
 		PolizElem * op1 = stack->Pop();
 		PolizInt * p1 = dynamic_cast<PolizInt *>(op1);
@@ -595,7 +596,7 @@ class PolizFunLssr: public PolizFunction
 public:
 	PolizFunLssr() {}
 	virtual ~PolizFunLssr() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
 		PolizElem * op1 = stack->Pop();
 		PolizInt * p1 = dynamic_cast<PolizInt *>(op1);
@@ -619,7 +620,7 @@ class PolizFunGrtr: public PolizFunction
 public:
 	PolizFunGrtr() {}
 	virtual ~PolizFunGrtr() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
 		PolizElem * op1 = stack->Pop();
 		PolizInt * p1 = dynamic_cast<PolizInt *>(op1);
@@ -643,7 +644,7 @@ class PolizFunLeq: public PolizFunction
 public:
 	PolizFunLeq() {}
 	virtual ~PolizFunLeq() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
 		PolizElem * op1 = stack->Pop();
 		PolizInt * p1 = dynamic_cast<PolizInt *>(op1);
@@ -667,7 +668,7 @@ class PolizFunGeq: public PolizFunction
 public:
 	PolizFunGeq() {}
 	virtual ~PolizFunGeq() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
 		PolizElem * op1 = stack->Pop();
 		PolizInt * p1 = dynamic_cast<PolizInt *>(op1);
@@ -691,7 +692,7 @@ class PolizAssign:public PolizFunction
 public:
 	PolizAssign() {}
 	virtual ~PolizAssign() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
 		PolizElem * op1 = stack->Pop();
 		PolizInt * p1 = dynamic_cast<PolizInt *>(op1);
@@ -714,7 +715,7 @@ class PolizPrint:public PolizFunction
 public:
 	PolizPrint() {}
 	virtual ~PolizPrint() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
 		PolizElem * op;
 		PolizConst * print_elem;
@@ -741,7 +742,7 @@ class PolizIndex:public PolizFunction
 public:
 	PolizIndex() {}
 	virtual ~PolizIndex() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
 		PolizElem * op1, * op2;
 		PolizInt * index;
@@ -767,24 +768,15 @@ class PolizTurn:public PolizFunction
 public:
 	PolizTurn() {}
 	virtual ~PolizTurn() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
 		PolizElem * op;
-		PolizConst * print_elem;
 		op = stack->Pop();
-		while(dynamic_cast<PolizArgEnd *>(op)== NULL && op!=NULL)
-		{
-			print_elem = dynamic_cast<PolizConst *>(op);
-			if(!print_elem)
-				throw PolizUnprintable(op);
-			print_elem->Print();
-			delete op;
-			op = stack->Pop();
-		}
-		if(!op)
+		PolizArgEnd * end = dynamic_cast<PolizArgEnd *>(op);
+		if(!end)
 			throw PolizInfArgs(op);
 		delete op;
-		return new PolizInt(0);
+		return new PolizInt(client->Turn());
 	}
 };
 
@@ -793,25 +785,20 @@ class PolizRaw:public PolizFunction
 public:
 	PolizRaw() {}
 	virtual ~PolizRaw() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
-		PolizElem * op;
-		PolizConst * print_elem;
-		op = stack->Pop();
-		while(dynamic_cast<PolizArgEnd *>(op)== NULL && op!=NULL)
-		{
-			print_elem = dynamic_cast<PolizConst *>(op);
-			if(!print_elem)
-				throw PolizUnprintable(op);
-			print_elem->Print();
-			delete op;
-			op = stack->Pop();
-		}
-		if(!op)
-			throw PolizInfArgs(op);
-		delete op;
-		return new PolizInt(0);
-	}
+		PolizElem * op1 = stack->Pop();
+		PolizInt * pc = dynamic_cast<PolizInt *>(op1);
+		if(!pc)
+			throw PolizNotInt(op1);
+		int id;
+		id = pc->Get();
+		delete pc;
+		op1 = stack->Pop();
+		PolizArgEnd * end = dynamic_cast<PolizArgEnd *>(op1);
+		if(!end)
+			throw PolizInfArgs(op1);;
+		return new PolizInt(client->Money(id));	}	
 
 };
 
@@ -820,26 +807,16 @@ class PolizId:public PolizFunction
 public:
 	PolizId() {}
 	virtual ~PolizId() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
 		PolizElem * op;
-		PolizConst * print_elem;
 		op = stack->Pop();
-		while(dynamic_cast<PolizArgEnd *>(op)== NULL && op!=NULL)
-		{
-			print_elem = dynamic_cast<PolizConst *>(op);
-			if(!print_elem)
-				throw PolizUnprintable(op);
-			print_elem->Print();
-			delete op;
-			op = stack->Pop();
-		}
-		if(!op)
+		PolizArgEnd * end = dynamic_cast<PolizArgEnd *>(op);
+		if(!end)
 			throw PolizInfArgs(op);
 		delete op;
-		return new PolizInt(0);
+		return new PolizInt(client->MyId());	
 	}
-
 };
 
 class PolizPlayers:public PolizFunction
@@ -847,24 +824,15 @@ class PolizPlayers:public PolizFunction
 public:
 	PolizPlayers() {}
 	virtual ~PolizPlayers() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
 		PolizElem * op;
-		PolizConst * print_elem;
 		op = stack->Pop();
-		while(dynamic_cast<PolizArgEnd *>(op)== NULL && op!=NULL)
-		{
-			print_elem = dynamic_cast<PolizConst *>(op);
-			if(!print_elem)
-				throw PolizUnprintable(op);
-			print_elem->Print();
-			delete op;
-			op = stack->Pop();
-		}
-		if(!op)
+		PolizArgEnd * end = dynamic_cast<PolizArgEnd *>(op);
+		if(!end)
 			throw PolizInfArgs(op);
 		delete op;
-		return new PolizInt(0);
+		return new PolizInt(client->Players());		
 	}
 
 };
@@ -874,25 +842,16 @@ class PolizActPlayers:public PolizFunction
 public:
 	PolizActPlayers() {}
 	virtual ~PolizActPlayers() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
 		PolizElem * op;
-		PolizConst * print_elem;
 		op = stack->Pop();
-		while(dynamic_cast<PolizArgEnd *>(op)== NULL && op!=NULL)
-		{
-			print_elem = dynamic_cast<PolizConst *>(op);
-			if(!print_elem)
-				throw PolizUnprintable(op);
-			print_elem->Print();
-			delete op;
-			op = stack->Pop();
-		}
-		if(!op)
+		PolizArgEnd * end = dynamic_cast<PolizArgEnd *>(op);
+		if(!end)
 			throw PolizInfArgs(op);
 		delete op;
-		return new PolizInt(0);
-	}
+		return new PolizInt(client->ActPlayers());		
+	}	
 
 };
 
@@ -901,26 +860,16 @@ class PolizSupply:public PolizFunction
 public:
 	PolizSupply() {}
 	virtual ~PolizSupply() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
 		PolizElem * op;
-		PolizConst * print_elem;
 		op = stack->Pop();
-		while(dynamic_cast<PolizArgEnd *>(op)== NULL && op!=NULL)
-		{
-			print_elem = dynamic_cast<PolizConst *>(op);
-			if(!print_elem)
-				throw PolizUnprintable(op);
-			print_elem->Print();
-			delete op;
-			op = stack->Pop();
-		}
-		if(!op)
+		PolizArgEnd * end = dynamic_cast<PolizArgEnd *>(op);
+		if(!end)
 			throw PolizInfArgs(op);
 		delete op;
-		return new PolizInt(0);
+		return new PolizInt(client->Supply());			
 	}
-
 };
 
 class PolizRawPrice:public PolizFunction
@@ -928,24 +877,15 @@ class PolizRawPrice:public PolizFunction
 public:
 	PolizRawPrice() {}
 	virtual ~PolizRawPrice() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
 		PolizElem * op;
-		PolizConst * print_elem;
 		op = stack->Pop();
-		while(dynamic_cast<PolizArgEnd *>(op)== NULL && op!=NULL)
-		{
-			print_elem = dynamic_cast<PolizConst *>(op);
-			if(!print_elem)
-				throw PolizUnprintable(op);
-			print_elem->Print();
-			delete op;
-			op = stack->Pop();
-		}
-		if(!op)
+		PolizArgEnd * end = dynamic_cast<PolizArgEnd *>(op);
+		if(!end)
 			throw PolizInfArgs(op);
 		delete op;
-		return new PolizInt(0);
+		return new PolizInt(client->RawPrice());	
 	}
 
 };
@@ -955,24 +895,15 @@ class PolizDemand:public PolizFunction
 public:
 	PolizDemand() {}
 	virtual ~PolizDemand() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
 		PolizElem * op;
-		PolizConst * print_elem;
 		op = stack->Pop();
-		while(dynamic_cast<PolizArgEnd *>(op)== NULL && op!=NULL)
-		{
-			print_elem = dynamic_cast<PolizConst *>(op);
-			if(!print_elem)
-				throw PolizUnprintable(op);
-			print_elem->Print();
-			delete op;
-			op = stack->Pop();
-		}
-		if(!op)
+		PolizArgEnd * end = dynamic_cast<PolizArgEnd *>(op);
+		if(!end)
 			throw PolizInfArgs(op);
 		delete op;
-		return new PolizInt(0);
+		return new PolizInt(client->Demand());	
 	}
 
 };
@@ -982,24 +913,15 @@ class PolizProdPrice:public PolizFunction
 public:
 	PolizProdPrice() {}
 	virtual ~PolizProdPrice() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
 		PolizElem * op;
-		PolizConst * print_elem;
 		op = stack->Pop();
-		while(dynamic_cast<PolizArgEnd *>(op)== NULL && op!=NULL)
-		{
-			print_elem = dynamic_cast<PolizConst *>(op);
-			if(!print_elem)
-				throw PolizUnprintable(op);
-			print_elem->Print();
-			delete op;
-			op = stack->Pop();
-		}
-		if(!op)
+		PolizArgEnd * end = dynamic_cast<PolizArgEnd *>(op);
+		if(!end)
 			throw PolizInfArgs(op);
 		delete op;
-		return new PolizInt(0);
+		return new PolizInt(client->ProdPrice());	
 	}
 
 };
@@ -1009,26 +931,21 @@ class PolizMoney:public PolizFunction
 public:
 	PolizMoney() {}
 	virtual ~PolizMoney() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
-		PolizElem * op;
-		PolizConst * print_elem;
-		op = stack->Pop();
-		while(dynamic_cast<PolizArgEnd *>(op)== NULL && op!=NULL)
-		{
-			print_elem = dynamic_cast<PolizConst *>(op);
-			if(!print_elem)
-				throw PolizUnprintable(op);
-			print_elem->Print();
-			delete op;
-			op = stack->Pop();
-		}
-		if(!op)
-			throw PolizInfArgs(op);
-		delete op;
-		return new PolizInt(0);
+		PolizElem * op1 = stack->Pop();
+		PolizInt * pc = dynamic_cast<PolizInt *>(op1);
+		if(!pc)
+			throw PolizNotInt(op1);
+		int id;
+		id = pc->Get();
+		delete pc;
+		op1 = stack->Pop();
+		PolizArgEnd * end = dynamic_cast<PolizArgEnd *>(op1);
+		if(!end)
+			throw PolizInfArgs(op1);
+		return new PolizInt(client->Money(id));
 	}
-
 };
 
 class PolizProduction:public PolizFunction
@@ -1036,24 +953,20 @@ class PolizProduction:public PolizFunction
 public:
 	PolizProduction() {}
 	virtual ~PolizProduction() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
-		PolizElem * op;
-		PolizConst * print_elem;
-		op = stack->Pop();
-		while(dynamic_cast<PolizArgEnd *>(op)== NULL && op!=NULL)
-		{
-			print_elem = dynamic_cast<PolizConst *>(op);
-			if(!print_elem)
-				throw PolizUnprintable(op);
-			print_elem->Print();
-			delete op;
-			op = stack->Pop();
-		}
-		if(!op)
-			throw PolizInfArgs(op);
-		delete op;
-		return new PolizInt(0);
+		PolizElem * op1 = stack->Pop();
+		PolizInt * pc = dynamic_cast<PolizInt *>(op1);
+		if(!pc)
+			throw PolizNotInt(op1);
+		int id;
+		id = pc->Get();
+		delete pc;
+		op1 = stack->Pop();
+		PolizArgEnd * end = dynamic_cast<PolizArgEnd *>(op1);
+		if(!end)
+			throw PolizInfArgs(op1);
+		return new PolizInt(client->Production(id));
 	}
 
 };
@@ -1063,24 +976,20 @@ class PolizFacts:public PolizFunction
 public:
 	PolizFacts() {}
 	virtual ~PolizFacts() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
-		PolizElem * op;
-		PolizConst * print_elem;
-		op = stack->Pop();
-		while(dynamic_cast<PolizArgEnd *>(op)== NULL && op!=NULL)
-		{
-			print_elem = dynamic_cast<PolizConst *>(op);
-			if(!print_elem)
-				throw PolizUnprintable(op);
-			print_elem->Print();
-			delete op;
-			op = stack->Pop();
-		}
-		if(!op)
-			throw PolizInfArgs(op);
-		delete op;
-		return new PolizInt(0);
+		PolizElem * op1 = stack->Pop();
+		PolizInt * pc = dynamic_cast<PolizInt *>(op1);
+		if(!pc)
+			throw PolizNotInt(op1);
+		int id;
+		id = pc->Get();
+		delete pc;
+		op1 = stack->Pop();
+		PolizArgEnd * end = dynamic_cast<PolizArgEnd *>(op1);
+		if(!end)
+			throw PolizInfArgs(op1);
+		return new PolizInt(client->Facts(id));
 	}
 
 };
@@ -1090,24 +999,20 @@ class PolizAutoFacts:public PolizFunction
 public:
 	PolizAutoFacts() {}
 	virtual ~PolizAutoFacts() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
-		PolizElem * op;
-		PolizConst * print_elem;
-		op = stack->Pop();
-		while(dynamic_cast<PolizArgEnd *>(op)== NULL && op!=NULL)
-		{
-			print_elem = dynamic_cast<PolizConst *>(op);
-			if(!print_elem)
-				throw PolizUnprintable(op);
-			print_elem->Print();
-			delete op;
-			op = stack->Pop();
-		}
-		if(!op)
-			throw PolizInfArgs(op);
-		delete op;
-		return new PolizInt(0);
+		PolizElem * op1 = stack->Pop();
+		PolizInt * pc = dynamic_cast<PolizInt *>(op1);
+		if(!pc)
+			throw PolizNotInt(op1);
+		int id;
+		id = pc->Get();
+		delete pc;
+		op1 = stack->Pop();
+		PolizArgEnd * end = dynamic_cast<PolizArgEnd *>(op1);
+		if(!end)
+			throw PolizInfArgs(op1);
+		return new PolizInt(client->AutoFacts(id));
 	}
 
 };
@@ -1117,24 +1022,20 @@ class PolizManuf:public PolizFunction
 public:
 	PolizManuf() {}
 	virtual ~PolizManuf() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
-		PolizElem * op;
-		PolizConst * print_elem;
-		op = stack->Pop();
-		while(dynamic_cast<PolizArgEnd *>(op)== NULL && op!=NULL)
-		{
-			print_elem = dynamic_cast<PolizConst *>(op);
-			if(!print_elem)
-				throw PolizUnprintable(op);
-			print_elem->Print();
-			delete op;
-			op = stack->Pop();
-		}
-		if(!op)
-			throw PolizInfArgs(op);
-		delete op;
-		return new PolizInt(0);
+		PolizElem * op1 = stack->Pop();
+		PolizInt * pc = dynamic_cast<PolizInt *>(op1);
+		if(!pc)
+			throw PolizNotInt(op1);
+		int id;
+		id = pc->Get();
+		delete pc;
+		op1 = stack->Pop();
+		PolizArgEnd * end = dynamic_cast<PolizArgEnd *>(op1);
+		if(!end)
+			throw PolizInfArgs(op1);
+		return new PolizInt(client->Manuf(id));
 	}
 
 };
@@ -1144,24 +1045,20 @@ class PolizRawSold:public PolizFunction
 public:
 	PolizRawSold() {}
 	virtual ~PolizRawSold() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
-		PolizElem * op;
-		PolizConst * print_elem;
-		op = stack->Pop();
-		while(dynamic_cast<PolizArgEnd *>(op)== NULL && op!=NULL)
-		{
-			print_elem = dynamic_cast<PolizConst *>(op);
-			if(!print_elem)
-				throw PolizUnprintable(op);
-			print_elem->Print();
-			delete op;
-			op = stack->Pop();
-		}
-		if(!op)
-			throw PolizInfArgs(op);
-		delete op;
-		return new PolizInt(0);
+		PolizElem * op1 = stack->Pop();
+		PolizInt * pc = dynamic_cast<PolizInt *>(op1);
+		if(!pc)
+			throw PolizNotInt(op1);
+		int id;
+		id = pc->Get();
+		delete pc;
+		op1 = stack->Pop();
+		PolizArgEnd * end = dynamic_cast<PolizArgEnd *>(op1);
+		if(!end)
+			throw PolizInfArgs(op1);
+		return new PolizInt(client->RawSold(id));
 	}
 
 };
@@ -1171,24 +1068,20 @@ class PolizProdBought:public PolizFunction
 public:
 	PolizProdBought() {}
 	virtual ~PolizProdBought() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
-		PolizElem * op;
-		PolizConst * print_elem;
-		op = stack->Pop();
-		while(dynamic_cast<PolizArgEnd *>(op)== NULL && op!=NULL)
-		{
-			print_elem = dynamic_cast<PolizConst *>(op);
-			if(!print_elem)
-				throw PolizUnprintable(op);
-			print_elem->Print();
-			delete op;
-			op = stack->Pop();
-		}
-		if(!op)
-			throw PolizInfArgs(op);
-		delete op;
-		return new PolizInt(0);
+		PolizElem * op1 = stack->Pop();
+		PolizInt * pc = dynamic_cast<PolizInt *>(op1);
+		if(!pc)
+			throw PolizNotInt(op1);
+		int id;
+		id = pc->Get();
+		delete pc;
+		op1 = stack->Pop();
+		PolizArgEnd * end = dynamic_cast<PolizArgEnd *>(op1);
+		if(!end)
+			throw PolizInfArgs(op1);
+		return new PolizInt(client->ProdBought(id));
 	}
 
 };
@@ -1198,24 +1091,20 @@ class PolizResRawPrice:public PolizFunction
 public:
 	PolizResRawPrice() {}
 	virtual ~PolizResRawPrice() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
-		PolizElem * op;
-		PolizConst * print_elem;
-		op = stack->Pop();
-		while(dynamic_cast<PolizArgEnd *>(op)== NULL && op!=NULL)
-		{
-			print_elem = dynamic_cast<PolizConst *>(op);
-			if(!print_elem)
-				throw PolizUnprintable(op);
-			print_elem->Print();
-			delete op;
-			op = stack->Pop();
-		}
-		if(!op)
-			throw PolizInfArgs(op);
-		delete op;
-		return new PolizInt(0);
+		PolizElem * op1 = stack->Pop();
+		PolizInt * pc = dynamic_cast<PolizInt *>(op1);
+		if(!pc)
+			throw PolizNotInt(op1);
+		int id;
+		id = pc->Get();
+		delete pc;
+		op1 = stack->Pop();
+		PolizArgEnd * end = dynamic_cast<PolizArgEnd *>(op1);
+		if(!end)
+			throw PolizInfArgs(op1);
+		return new PolizInt(client->RawPrice(id));
 	}
 
 };
@@ -1225,24 +1114,20 @@ class PolizResProdPrice:public PolizFunction
 public:
 	PolizResProdPrice() {}
 	virtual ~PolizResProdPrice() {}
-	virtual PolizElem * EvaluateFun(PolizStack * stack) const
+	virtual PolizElem * EvaluateFun(PolizStack * stack, GameClient * client) const
 	{
-		PolizElem * op;
-		PolizConst * print_elem;
-		op = stack->Pop();
-		while(dynamic_cast<PolizArgEnd *>(op)== NULL && op!=NULL)
-		{
-			print_elem = dynamic_cast<PolizConst *>(op);
-			if(!print_elem)
-				throw PolizUnprintable(op);
-			print_elem->Print();
-			delete op;
-			op = stack->Pop();
-		}
-		if(!op)
-			throw PolizInfArgs(op);
-		delete op;
-		return new PolizInt(0);
+		PolizElem * op1 = stack->Pop();
+		PolizInt * pc = dynamic_cast<PolizInt *>(op1);
+		if(!pc)
+			throw PolizNotInt(op1);
+		int id;
+		id = pc->Get();
+		delete pc;
+		op1 = stack->Pop();
+		PolizArgEnd * end = dynamic_cast<PolizArgEnd *>(op1);
+		if(!end)
+			throw PolizInfArgs(op1);
+		return new PolizInt(client->ProdPrice(id));
 	}
 
 };
@@ -1252,7 +1137,7 @@ class PolizOpGo:public PolizElem
 public:
 	PolizOpGo() {}
 	virtual ~PolizOpGo() {}
-	virtual void Evaluate(PolizStack * stack, PolizItem ** cur_cmd) const 
+	virtual void Evaluate(PolizStack * stack, PolizItem ** cur_cmd, GameClient * client) const 
 	{
 		PolizElem * op = stack->Pop();
 		PolizLabel * lab = dynamic_cast<PolizLabel *>(op);
@@ -1271,7 +1156,7 @@ class PolizIf:public PolizElem
 public:
 	PolizIf() {}
 	virtual ~PolizIf() {}
-	virtual void Evaluate(PolizStack * stack, PolizItem ** cur_cmd) const 
+	virtual void Evaluate(PolizStack * stack, PolizItem ** cur_cmd, GameClient * client) const 
 	{
 		PolizElem * op = stack->Pop();
 		PolizLabel * lab = dynamic_cast<PolizLabel *>(op);

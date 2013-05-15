@@ -3,7 +3,8 @@
 #include "parser.h"
 #include "id_tables.h"
 
-Parser::Parser():file_ended(false), cur_lex(NULL), prog(), stack()
+Parser::Parser(int port, const char * ip, const char * name, int game)
+	:client(port, ip, name, game), file_ended(false), cur_lex(NULL), prog(), stack()
 {
 }
 
@@ -19,7 +20,7 @@ void Parser::Interpret()
 	Analyse();
 	PolizItem * cur_cmd = prog.GetHead();
 	while(cur_cmd) {
-		(cur_cmd->elem)->Evaluate(&stack,&cur_cmd);
+		(cur_cmd->elem)->Evaluate(&stack,&cur_cmd,&client);
 	}
 }
 

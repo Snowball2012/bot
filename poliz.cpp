@@ -6,6 +6,7 @@
 #include "poliz.h"
 #include "lex.h"
 #include "parser.h"
+#include "client.h"
 
 //PolizStack realization
 

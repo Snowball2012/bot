@@ -4,6 +4,7 @@
 #include "lex.h"
 #include "poliz.h"
 #include "id_tables.h"
+#include "client.h"
 
 class Parser
 {
@@ -12,6 +13,7 @@ class Parser
 	IdTable<Variable> var_t;
 	IdTable<Label> lab_t;
 	Lex * cur_lex;
+	GameClient client;
 	PolizStack prog;
 	PolizStack stack;
 	void GetLex();
@@ -33,7 +35,7 @@ class Parser
 public:
 	void Analyse();
 	void Interpret();
-	Parser();
+	Parser(int port, const char * ip, const char * name, int game);
 };
 
 class SyntErr

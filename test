@@ -1,15 +1,11 @@
 while 1 do {
+	print "Turn #",  ?turn; 
 	buy 2, ?raw_price;
 	sell ?production(?my_id), ?production_price;
 	$toprod = 2;
-@lab:
-	{
-		if ?raw(?my_id) < $toprod then
-			$toprod = ?raw(?my_id);
-		prod $toprod;
-		endturn;
-		print "this is test string", $toprod>1;
-		goto @lab;
-	}
+	if ?raw(?my_id) < $toprod then
+		$toprod = ?raw(?my_id);
+	prod $toprod;
+	endturn;
 }
 
